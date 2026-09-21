@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Employee Data Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">EMPLOYEE MANAGEMENT</p>
+        <h1>ระบบจัดเก็บข้อมูลพนักงาน</h1>
+        <p class="subtitle">อัปโหลดไฟล์พนักงาน แสดงผลเป็นตาราง ค้นหาตามชื่อ และกรองข้อมูลได้ทุกหัวข้อ</p>
+      </div>
+      <div class="hero-badge">Flask + Vercel Ready</div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="messages">
+          {% for category, message in messages %}
+            <div class="alert {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <section class="card upload-card">
+      <div class="section-heading">
+        <div>
+          <h2>อัปโหลดข้อมูลพนักงาน</h2>
+          <p>รองรับไฟล์ .CSV, .XLSX และ .XLS สูงสุด 5,000 แถวต่อครั้ง</p>
+        </div>
+        <span class="icon">↥</span>
+      </div>
+      <form method="post" enctype="multipart/form-data" class="upload-form">
+        <label class="file-drop" for="employee_file">
+          <span class="upload-symbol">📄</span>
+          <strong>เลือกไฟล์ข้อมูลพนักงาน</strong>
+          <span id="file-name">ยังไม่ได้เลือกไฟล์</span>
+        </label>
+        <input id="employee_file" type="file" name="employee_file" accept=".csv,.xlsx,.xls" required>
+        <button type="submit" class="primary-btn">อัปโหลดและแสดงข้อมูล</button>
+      </form>
+      <p class="hint">หัวตารางจะถูกอ่านอัตโนมัติ เช่น Employee_Name, EmpID, Department, Position และหัวข้ออื่น ๆ ทั้งหมด</p>
+    </section>
+
+    {% if columns %}
+    <section class="stats-grid">
+      <div class="stat-card"><span>จำนวนพนักงาน</span><strong id="total-count">{{ rows|length }}</strong><small>รายการทั้งหมด</small></div>
+      <div class="stat-card"><span>หัวข้อข้อมูล</span><strong>{{ columns|length }}</strong><small>คอลัมน์ในไฟล์</small></div>
+      <div class="stat-card"><span>ผลการค้นหา</span><strong id="visible-count">{{ rows|length }}</strong><small>รายการที่แสดงอยู่</small></div>
+    </section>
+
+    <section class="card data-card">
+      <div class="section-heading data-heading">
+        <div>
+          <h2>ตารางข้อมูลพนักงาน</h2>
+          <p>ไฟล์: <b>{{ filename }}</b></p>
+        </div>
+        <div class="button-group">
+          <button class="secondary-btn" id="reset-filters" type="button">เคลียร์ตัวกรอง</button>
+          <button class="danger-btn" id="clear-data" type="button">ล้างข้อมูลทั้งหมด</button>
+        </div>
+      </div>
+
+      <div class="search-row">
+        <label class="search-box">
+          <span>⌕</span>
+          <input id="name-search" type="search" placeholder="ค้นหาตามชื่อพนักงาน...">
+        </label>
+        <select id="page-size" aria-label="จำนวนแถวต่อหน้า">
+          <option value="10">10 แถว</option>
+          <option value="25" selected>25 แถว</option>
+          <option value="50">50 แถว</option>
+          <option value="100">100 แถว</option>
+        </select>
+      </div>
+
+      <div class="filters" id="filters">
+        {% for column in columns %}
+        <label class="filter-field">
+          <span>{{ column }}</span>
+          <select data-column="{{ loop.index0 }}" class="column-filter"><option value="">ทุกค่า</option></select>
+        </label>
+        {% endfor %}
+      </div>
+
+      <div class="table-wrap">
+        <table id="employee-table">
+          <thead><tr>{% for column in columns %}<th>{{ column }}</th>{% endfor %}<th class="action-column">จัดการ</th></tr></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="range-label">กำลังแสดงข้อมูล</span>
+        <div class="pagination"><button id="prev-page" class="secondary-btn" type="button">ก่อนหน้า</button><span id="page-label">1 / 1</span><button id="next-page" class="secondary-btn" type="button">ถัดไป</button></div>
+      </div>
+    </section>
+    {% endif %}
+
+    <footer>ระบบตัวอย่างสำหรับโปรเจกต์งานแลป • สามารถลบข้อมูลบนหน้าจอได้ ข้อมูลไม่ได้บันทึกถาวร</footer>
+  </main>
+
+  {% if columns %}
+  <script>
+    const columns = {{ columns | tojson }};
+    let rows = {{ rows | tojson }};
+  </script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  {% endif %}
+  <script>
+    const fileInput = document.getElementById('employee_file');
+    if (fileInput) fileInput.addEventListener('change', () => {
+      document.getElementById('file-name').textContent = fileInput.files[0]?.name || 'ยังไม่ได้เลือกไฟล์';
+    });
+  </script>
+</body>
+</html>
